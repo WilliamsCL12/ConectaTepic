@@ -1,0 +1,114 @@
+/* Estilos generales */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Diseño del contenedor principal */
+  body {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  /* Estilo del menú lateral */
+  #sidebar {
+    width: 250px;
+    background-color: #333;
+    color: #fff;
+    padding-top: 20px;
+    position: fixed;
+    left: -250px;
+    height: 100%;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+  
+  #sidebar.open {
+    left: 0;
+  }
+  
+  /* Estilos del botón dentro del menú */
+  #menu-toggle {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    position: absolute;
+    top: 15px;
+    right: -40px; /* Ubica el botón en el borde derecho del menú */
+    z-index: 1001;
+  }
+  
+  #sidebar h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  #sidebar ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  #sidebar ul li {
+    padding: 15px;
+  }
+  
+  #sidebar ul li a {
+    color: #fff;
+    text-decoration: none;
+    display: block;
+  }
+  
+  #sidebar ul li a:hover {
+    background-color: #444;
+  }
+  
+  /* Diseño del contenedor del mapa */
+  #main-content {
+    flex: 1;
+    transition: margin-left 0.3s ease;
+  }
+  
+  #main-content header {
+    display: flex;
+    align-items: center;
+    background-color: #007BFF;
+    color: #fff;
+    padding: 15px 20px; /* Ajusta el padding para dar espacio */
+    padding-left: 60px; /* Añade espacio a la izquierda para el botón */
+    position: relative;
+  }
+  
+  #main-content header h1 {
+    flex-grow: 1;
+    font-size: 18px;
+  }
+  
+  #map {
+    width: 100%;
+    height: calc(100vh - 60px);
+    background-color: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  /* Adaptación para dispositivos móviles */
+  @media (max-width: 768px) {
+    /* El contenedor principal no debe moverse al abrir el menú */
+    #main-content {
+      margin-left: 0;
+    }
+  
+    #sidebar.open + #main-content {
+      margin-left: 0;
+    }
+  }
+  
