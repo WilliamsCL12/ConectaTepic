@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Rutas con Búsqueda y Resultados</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #searchContainer {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background-color: #f8f9fa;
+            z-index: 1000;
+        }
+        #searchInput {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+        }
+        #searchResults {
+            background-color: white;
+            border: 1px solid #ddd;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 5px;
+        }
+        #searchResults div {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        #searchResults div:hover {
+            background-color: #f1f1f1;
+        }
+        #map {
+            flex: 1;
+            width: 100%;
+        }
+        #menu {
+            width: 250px;
+            background: #f8f9fa;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+        #menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #menu ul li {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+        }
+        #menu ul li:hover {
+            background-color: #e9ecef;
+        }
+        #toggleMenuBtn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            padding: 0.5rem 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 1100;
+            display: none;
+        }
+        /* Mostrar botón en pantallas pequeñas */
+        @media (max-width: 768px) {
+            #menu {
+                transform: translateX(-100%);
+            }
+            #menu.active {
+                transform: translateX(0);
+            }
+            #toggleMenuBtn {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="menu">
+        <div class="menu-header">Rutas Disponibles</div>
+        <ul id="routeList"></ul>
+    </div>
+
+    <button id="toggleMenuBtn">☰ Rutas</button>
+    
+    <div id="searchContainer">
+        <input type="text" id="searchInput" placeholder="Buscar destino (ej. Plaza Principal Tepic)">
+        <div id="searchResults"></div>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([21.505, -104.901], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        let routeLayers = [];
+        let destinationMarker = null;
+
+        async function loadGeoJSON() {
+            const response = await fetch("TEPIC.geojson");
+            const data = await response.json();
+
+            const routeList = document.getElementById("routeList");
+            routeList.innerHTML = "";
+
+            data.features.forEach((feature) => {
+                const routeName = feature.properties.title;
+
+                const listItem = document.createElement("li");
+                listItem.textContent = routeName;
+                listItem.onclick = () => showRoute(feature);
+                routeList.appendChild(listItem);
+
+                const routeStyle = {
+                    color: feature.properties.stroke,
+                    weight: feature.properties['stroke-width']
+                };
+
+                const routeLayer = L.geoJSON(feature, { style: routeStyle }).addTo(map);
+                routeLayers.push({ layer: routeLayer, feature });
+            });
+        }
+
+        loadGeoJSON();
+
+        function showRoute(feature) {
+            routeLayers.forEach(route => {
+                if (route.feature === feature) {
+                    route.layer.addTo(map);
+                } else {
+                    map.removeLayer(route.layer);
+                }
+            });
+            map.fitBounds(L.geoJSON(feature).getBounds());
+        }
+
+        document.getElementById("searchInput").addEventListener("input", async () => {
+            const query = document.getElementById("searchInput").value;
+            if (!query) {
+                document.getElementById("searchResults").innerHTML = "";
+                return;
+            }
+
+            const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=MX&q=${encodeURIComponent(query)}`;
+            const response = await fetch(url);
+            const results = await response.json();
+
+            const searchResults = document.getElementById("searchResults");
+            searchResults.innerHTML = "";
+
+            results.forEach(result => {
+                const resultItem = document.createElement("div");
+                resultItem.textContent = result.display_name;
+                resultItem.onclick = () => selectResult(result);
+                searchResults.appendChild(resultItem);
+            });
+        });
+
+        function selectResult(result) {
+            const { lat, lon } = result;
+            const destinationCoords = [parseFloat(lat), parseFloat(lon)];
+
+            if (destinationMarker) map.removeLayer(destinationMarker);
+            destinationMarker = L.marker(destinationCoords).addTo(map).bindPopup("Destino encontrado").openPopup();
+            map.setView(destinationCoords, 14);
+
+            document.getElementById("searchResults").innerHTML = "";
+            highlightClosestRoutes(destinationCoords);
+        }
+
+        function highlightClosestRoutes(destinationCoords) {
+            routeLayers.forEach(route => {
+                route.layer.setStyle({ color: route.feature.properties.stroke });
+            });
+
+            const maxDistance = 1000;
+            routeLayers.forEach(route => {
+                const routeBounds = route.layer.getBounds();
+                const distance = map.distance(routeBounds.getCenter(), destinationCoords);
+
+                if (distance <= maxDistance) {
+                    route.layer.setStyle({ color: "yellow", weight: 4 });
+                }
+            });
+        }
+
+        const menu = document.getElementById("menu");
+        const toggleMenuBtn = document.getElementById("toggleMenuBtn");
+
+        toggleMenuBtn.addEventListener("click", () => {
+            menu.classList.toggle("active");
+        });
+    </script>
+</body>
+</html>
