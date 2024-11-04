@@ -3,14 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de Rutas</title>
+    <title>Mapa de Rutas con Búsqueda y Resultados</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
         body {
             margin: 0;
             font-family: Arial, sans-serif;
             display: flex;
-            overflow: hidden;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #searchContainer {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background-color: #f8f9fa;
+            z-index: 1000;
+        }
+        #searchInput {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+        }
+        #searchResults {
+            background-color: white;
+            border: 1px solid #ddd;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 5px;
+        }
+        #searchResults div {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        #searchResults div:hover {
+            background-color: #f1f1f1;
+        }
+        #map {
+            flex: 1;
+            width: 100%;
         }
         #menu {
             width: 250px;
@@ -19,16 +52,9 @@
             overflow-y: auto;
             z-index: 1000;
             transition: transform 0.3s ease;
-        }
-        #menu.hidden {
-            transform: translateX(-100%);
-        }
-        #menu .menu-header {
-            padding: 1rem;
-            font-size: 1.25rem;
-            background-color: #007bff;
-            color: white;
-            text-align: center;
+            position: fixed;
+            left: 0;
+            top: 0;
         }
         #menu ul {
             list-style: none;
@@ -43,14 +69,6 @@
         #menu ul li:hover {
             background-color: #e9ecef;
         }
-        #map {
-            height: 100vh;
-            width: 100%;
-            transition: margin-left 0.3s ease;
-        }
-        #map.menu-visible {
-            margin-left: 250px;
-        }
         #toggleMenuBtn {
             position: fixed;
             top: 10px;
@@ -63,18 +81,13 @@
             z-index: 1100;
             display: none;
         }
-
         /* Mostrar botón en pantallas pequeñas */
         @media (max-width: 768px) {
             #menu {
-                position: fixed;
                 transform: translateX(-100%);
             }
             #menu.active {
                 transform: translateX(0);
-            }
-            #map.menu-visible {
-                margin-left: 0;
             }
             #toggleMenuBtn {
                 display: block;
@@ -90,11 +103,15 @@
     </div>
 
     <button id="toggleMenuBtn">☰ Rutas</button>
+    
+    <div id="searchContainer">
+        <input type="text" id="searchInput" placeholder="Buscar destino (ej. Plaza Principal Tepic)">
+        <div id="searchResults"></div>
+    </div>
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // Inicializar el mapa
         const map = L.map('map').setView([21.505, -104.901], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,
@@ -102,59 +119,96 @@
         }).addTo(map);
 
         let routeLayers = [];
+        let destinationMarker = null;
 
-        // Función para cargar y dibujar todas las rutas desde el archivo GeoJSON
         async function loadGeoJSON() {
-            const response = await fetch("TEPIC.geojson"); // Ruta local al archivo GeoJSON
+            const response = await fetch("TEPIC.geojson");
             const data = await response.json();
 
             const routeList = document.getElementById("routeList");
-            routeList.innerHTML = ""; // Limpiar la lista de rutas en el menú
+            routeList.innerHTML = "";
 
             data.features.forEach((feature) => {
                 const routeName = feature.properties.title;
 
-                // Crear un elemento de lista para cada ruta
                 const listItem = document.createElement("li");
                 listItem.textContent = routeName;
-                listItem.onclick = () => showRoute(feature); // Mostrar solo esta ruta al hacer clic
+                listItem.onclick = () => showRoute(feature);
                 routeList.appendChild(listItem);
 
-                // Mostrar todas las rutas en el mapa al cargar
                 const routeStyle = {
                     color: feature.properties.stroke,
                     weight: feature.properties['stroke-width']
                 };
 
                 const routeLayer = L.geoJSON(feature, { style: routeStyle }).addTo(map);
-                routeLayers.push(routeLayer);
+                routeLayers.push({ layer: routeLayer, feature });
             });
         }
 
-        // Mostrar solo la ruta seleccionada en el mapa
-        function showRoute(routeFeature) {
-            // Eliminar todas las rutas del mapa
-            routeLayers.forEach(layer => map.removeLayer(layer));
-
-            // Estilo de la ruta seleccionada
-            const routeStyle = {
-                color: routeFeature.properties.stroke,
-                weight: routeFeature.properties['stroke-width']
-            };
-
-            // Crear una capa de línea para la ruta y agregarla al mapa
-            const routeLayer = L.geoJSON(routeFeature, { style: routeStyle }).addTo(map);
-            routeLayers = [routeLayer];  // Almacenar solo la ruta seleccionada
-
-            // Calcular el centro de la ruta y hacer zoom con animación
-            const bounds = routeLayer.getBounds();
-            map.fitBounds(bounds, { animate: true, padding: [20, 20] });
-        }
-
-        // Cargar todas las rutas al iniciar
         loadGeoJSON();
 
-        // Mostrar/Ocultar el menú en dispositivos móviles
+        function showRoute(feature) {
+            routeLayers.forEach(route => {
+                if (route.feature === feature) {
+                    route.layer.addTo(map);
+                } else {
+                    map.removeLayer(route.layer);
+                }
+            });
+            map.fitBounds(L.geoJSON(feature).getBounds());
+        }
+
+        document.getElementById("searchInput").addEventListener("input", async () => {
+            const query = document.getElementById("searchInput").value;
+            if (!query) {
+                document.getElementById("searchResults").innerHTML = "";
+                return;
+            }
+
+            const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=MX&q=${encodeURIComponent(query)}`;
+            const response = await fetch(url);
+            const results = await response.json();
+
+            const searchResults = document.getElementById("searchResults");
+            searchResults.innerHTML = "";
+
+            results.forEach(result => {
+                const resultItem = document.createElement("div");
+                resultItem.textContent = result.display_name;
+                resultItem.onclick = () => selectResult(result);
+                searchResults.appendChild(resultItem);
+            });
+        });
+
+        function selectResult(result) {
+            const { lat, lon } = result;
+            const destinationCoords = [parseFloat(lat), parseFloat(lon)];
+
+            if (destinationMarker) map.removeLayer(destinationMarker);
+            destinationMarker = L.marker(destinationCoords).addTo(map).bindPopup("Destino encontrado").openPopup();
+            map.setView(destinationCoords, 14);
+
+            document.getElementById("searchResults").innerHTML = "";
+            highlightClosestRoutes(destinationCoords);
+        }
+
+        function highlightClosestRoutes(destinationCoords) {
+            routeLayers.forEach(route => {
+                route.layer.setStyle({ color: route.feature.properties.stroke });
+            });
+
+            const maxDistance = 1000;
+            routeLayers.forEach(route => {
+                const routeBounds = route.layer.getBounds();
+                const distance = map.distance(routeBounds.getCenter(), destinationCoords);
+
+                if (distance <= maxDistance) {
+                    route.layer.setStyle({ color: "yellow", weight: 4 });
+                }
+            });
+        }
+
         const menu = document.getElementById("menu");
         const toggleMenuBtn = document.getElementById("toggleMenuBtn");
 
