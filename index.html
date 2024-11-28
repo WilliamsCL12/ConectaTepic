@@ -12,7 +12,7 @@
             padding: 0;
             box-sizing: border-box;
             background: #f0f0f0;
-            height: 100%; /* Asegura que el cuerpo ocupe toda la altura */
+            height: 100%;
         }
 
         /* El mapa ocupa toda la pantalla */
@@ -21,6 +21,7 @@
             width: 100vw;  /* 100% del ancho de la pantalla */
         }
 
+        /* Controles de la interfaz */
         #controls {
             position: absolute;
             top: 10px;
@@ -62,7 +63,7 @@
         }
 
         h1 {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
             margin: 0;
             color: #333;
@@ -90,6 +91,46 @@
         /* Transición de la ventana emergente */
         .gm-style-iw {
             transition: opacity 0.4s ease;
+        }
+
+        /* Media queries para pantallas pequeñas */
+        @media (max-width: 600px) {
+            #controls {
+                width: 85%;
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 18px;
+            }
+
+            #routeSelector {
+                font-size: 14px;
+            }
+
+            #routeInfo {
+                font-size: 12px;
+            }
+        }
+
+        /* Media queries para pantallas más grandes */
+        @media (min-width: 1200px) {
+            #controls {
+                width: 400px;
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            #routeSelector {
+                font-size: 18px;
+            }
+
+            #routeInfo {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
