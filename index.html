@@ -3,301 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conecta Tepic - Rutas con Información</title>
-    <style>
-        /* Estilos globales */
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            background: #f0f0f0;
-            height: 100%; /* Asegura que el cuerpo ocupe toda la altura */
-        }
-
-        /* El mapa ocupa toda la pantalla */
-        #map {
-            height: 100vh; /* 100% de la altura de la pantalla */
-            width: 100vw;  /* 100% del ancho de la pantalla */
-        }
-
-        #controls {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            background: #ffffff;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            transition: 0.3s ease;
-            background-color: rgba(255, 255, 255, 0.8); /* Fondo semi-transparente */
-        }
-
-        #routeSelector {
-            padding: 10px;
-            font-size: 16px;
-            width: 100%;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            background-color: #fafafa;
-            margin-top: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            transition: background-color 0.3s ease;
-        }
-
-        #routeSelector:focus {
-            background-color: #f0f0f0;
-            outline: none;
-        }
-
-        #routeInfo {
-            font-size: 14px;
-            color: #555;
-            margin-top: 10px;
-        }
-
-        h1 {
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0;
-            color: #333;
-        }
-
-        /* Barra de búsqueda */
-        #addressSearch {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 16px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            background-color: #fafafa;
-        }
-
-        /* Ventana de información personalizada */
-        .info-window-content {
-            font-size: 16px;
-            padding: 10px;
-            background: #ffffff;
-            border-radius: 5px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .info-window-content h2 {
-            margin-top: 0;
-            color: #333;
-        }
-
-        .info-window-content p {
-            color: #777;
-            margin: 5px 0;
-        }
-
-        /* Transición de la ventana emergente */
-        .gm-style-iw {
-            transition: opacity 0.4s ease;
-        }
-
-        /* Responsividad */
-        @media (max-width: 768px) {
-            #controls {
-                width: 80%;
-                padding: 10px;
-            }
-
-            h1 {
-                font-size: 18px;
-            }
-
-            #routeSelector {
-                font-size: 14px;
-            }
-        }
-    </style>
+    <title>Cotizador de Impresiones</title>
+    <!-- Enlace a la hoja de estilos CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Enlace a Google Fonts para la fuente Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Enlace a Font Awesome para los iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
+    <header>
+        <!-- Título de la aplicación con un icono de impresora -->
+        <h1><i class="fas fa-print"></i> Cotizador de Impresiones</h1>
+        <a href="color.html">Color</a>
+        <a href=""></a>
+    </header>
+    <main>
+        <form id="cotizador-form">
+            <!-- Campo para cargar archivos -->
+            <div class="form-group">
+                <label for="file-upload">Cargar Archivo:</label>
+                <input type="file" id="file-upload" accept=".pdf,.doc,.docx">
+            </div>
 
-    <div id="controls">
-        <h1>Conecta Tepic</h1>
-        <label for="routeSelector">Selecciona una ruta:</label>
-        <select id="routeSelector">
-            <option value="all">Mostrar todas</option>
-        </select>
-        <p id="routeInfo">Selecciona una ruta para ver detalles.</p>
+            <!-- Campo para ingresar el número de juegos de impresiones -->
+            <div class="form-group">
+                <label for="num-copies">Número de Juegos:</label>
+                <input type="number" id="num-copies" min="1" value="1">
+            </div>
 
-        <!-- Barra de búsqueda de direcciones -->
-        <input type="text" id="addressSearch" placeholder="Buscar dirección" />
-    </div>
+            <!-- Selección del tipo de impresión: un lado o ambos lados -->
+            <div class="form-group">
+                <label>Tipo de Impresión:</label>
+                <div class="radio-group">
+                    <label for="simple">Un lado</label>
+                    <input type="radio" id="simple" name="print-type" value="simple" checked >
+                  
+                    <label for="doble">Ambos lados</label>
+                    <input type="radio" id="doble" name="print-type" value="doble">
+                </div>
+            </div>
 
-    <div id="map"></div>
+            <!-- Selección de la opción de engargolado -->
+            <div class="form-group">
+                <label>Engargolado:</label>
+                <input type="checkbox" id="binding" name="binding">
+                <label for="binding">Sí</label>
+            </div>
 
-    <!-- Google Maps API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDnyfOYFfVc4ROFaaNW19BXPFV-YGHkxh0&callback=initMap&libraries=places" async defer></script>
+            <!-- Opciones de tamaño de engargolado (aparecen solo si se selecciona la opción de engargolado) -->
+            <div id="binding-options" class="form-group" style="display: none;">
+                <label for="binding-size">Tamaño del Engargolado:</label>
+                <select id="binding-size">
+                    <option value="8">#8</option>
+                    <option value="11">#11</option>
+                    <option value="12">#12</option>
+                    <option value="14">#14</option>
+                    <option value="16">#16</option>
+                    <option value="20">#20</option>
+                    <option value="23">#23</option>
+                    <option value="25">#25</option>
+                    <option value="30">#30</option>
+                    <option value="38">#38</option>
+                    <option value="45">#45</option>
+                </select>
+            </div>
 
-    <script>
-        let map;
-        let geocoder;
-        let marker;
-        const geoJsonUrl = "TEPIC.geojson"; // URL del archivo GeoJSON
-        const infoWindow = new google.maps.InfoWindow(); // Ventana de información
+            <!-- Botón para agregar el archivo al carrito -->
+            <button type="button" id="add-to-cart" class="btn"><i class="fas fa-cart-plus"></i> Agregar al Carrito</button>
+        </form>
 
-        function initMap() {
-            const tepic = { lat: 21.5075, lng: -104.8946 };
+        <!-- Título de la sección del carrito -->
+        <h2><i class="fas fa-shopping-cart"></i> Carrito</h2>
+        <!-- Tabla para mostrar los archivos agregados al carrito -->
+        <table id="cart" class="cart-table">
+            <thead>
+                <tr>
+                    <th>Archivo</th>
+                    <th>Páginas</th>
+                    <th>Juegos</th>
+                    <th>Tipo de Impresión</th>
+                    <th>Engargolado</th>
+                  
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <!-- Botón para calcular el total de la cotización -->
+         <br>
+         <br>
+        <button type="button" id="calculate-total" class="btn"><i class="fas fa-calculator"></i> Calcular Total</button>
+        <!-- Boton para Impresion-->
+        <!--<button type="button" id="print-quote" class="btn"><i class="fas fa-print"></i> Imprimir Cotización</button>-->
 
-            // Inicializa el mapa sin estilos personalizados (modo normal)
-            map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 13,
-                center: tepic,
-            });
-
-            geocoder = new google.maps.Geocoder();
-
-            // Obtener la localización del usuario
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    const userLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                    };
-                    map.setCenter(userLocation);
-                    new google.maps.Marker({
-                        position: userLocation,
-                        map: map,
-                        title: "Tu ubicación",
-                    });
-                });
-            }
-
-            loadGeoJsonAndSetupSelector();
-
-            // Inicializar Places Autocomplete
-            const input = document.getElementById("addressSearch");
-            const autocomplete = new google.maps.places.Autocomplete(input);
-            autocomplete.bindTo("bounds", map);
-
-            // Escuchar cuando el usuario seleccione una dirección de la lista de autocompletado
-            autocomplete.addListener("place_changed", function () {
-                const place = autocomplete.getPlace();
-
-                if (!place.geometry) {
-                    return;
-                }
-
-                // Colocar marcador en la dirección seleccionada
-                if (marker) {
-                    marker.setMap(null); // Eliminar marcador anterior
-                }
-                marker = new google.maps.Marker({
-                    map: map,
-                    position: place.geometry.location,
-                    title: place.name,
-                });
-
-                map.setCenter(place.geometry.location);
-                map.setZoom(14);
-            });
-        }
-
-        function loadGeoJsonAndSetupSelector() {
-            fetch(geoJsonUrl)
-                .then((response) => response.json())
-                .then((data) => {
-                    // Cargar las rutas en el mapa
-                    map.data.addGeoJson(data);
-
-                    // Poblar el selector con las rutas
-                    populateRouteSelector(data);
-
-                    // Estilizar las rutas
-                    map.data.setStyle((feature) => ({
-                        strokeColor: feature.getProperty("stroke"),
-                        strokeWeight: feature.getProperty("stroke-width"),
-                    }));
-
-                    // Configurar eventos
-                    setupRouteInteraction(data);
-
-                    // Evento para cambiar rutas
-                    document.getElementById("routeSelector").addEventListener("change", (e) => {
-                        const selectedRoute = e.target.value;
-                        filterRoutes(selectedRoute, data);
-                    });
-                });
-        }
-
-        function populateRouteSelector(data) {
-            const selector = document.getElementById("routeSelector");
-            const uniqueRoutes = new Set();
-
-            // Extraer títulos de las rutas
-            data.features.forEach((feature) => {
-                const title = feature.properties.title;
-                if (title) uniqueRoutes.add(title);
-            });
-
-            // Añadir opciones al selector
-            uniqueRoutes.forEach((title) => {
-                const option = document.createElement("option");
-                option.value = title;
-                option.textContent = title;
-                selector.appendChild(option);
-            });
-        }
-
-        function filterRoutes(selectedRoute, geoJsonData) {
-            map.data.forEach((feature) => map.data.remove(feature));
-
-            if (selectedRoute === "all") {
-                map.data.addGeoJson(geoJsonData);
-            } else {
-                const filteredFeatures = {
-                    type: "FeatureCollection",
-                    features: geoJsonData.features.filter(
-                        (feature) => feature.properties.title === selectedRoute
-                    ),
-                };
-                map.data.addGeoJson(filteredFeatures);
-            }
-        }
-
-        function setupRouteInteraction(data) {
-            // Mostrar información al hacer clic en una ruta
-            map.data.addListener("click", (event) => {
-                const feature = event.feature;
-                const title = feature.getProperty("title");
-                const stroke = feature.getProperty("stroke");
-
-                // Contenido de la ventana de información
-                infoWindow.setContent(`
-                    <div class="info-window-content">
-                        <h2>Ruta: ${title}</h2>
-                        <p>Color: <span style="color:${stroke};">${stroke}</span></p>
-                    </div>
-                `);
-
-                const position = event.latLng;
-                infoWindow.setPosition(position);
-                infoWindow.open(map);
-            });
-
-            // Cambiar mensaje de información según la selección
-            document.getElementById("routeSelector").addEventListener("change", (e) => {
-                const selectedRoute = e.target.value;
-                const infoBox = document.getElementById("routeInfo");
-
-                if (selectedRoute === "all") {
-                    infoBox.textContent = "Mostrando todas las rutas.";
-                } else {
-                    infoBox.textContent = `Mostrando información de la ruta: ${selectedRoute}`;
-                }
-            });
-        }
-    </script>
-
+        <!-- Div para mostrar los resultados de la cotización -->
+        <div id="result"></div>
+    </main>
+    <!-- Enlaces a las bibliotecas JavaScript necesarias -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <!-- Enlace al archivo JavaScript de la aplicación -->
+    <script src="script.js"></script>
 </body>
 </html>
