@@ -51,7 +51,7 @@ button:hover {
 </head>
 <body>
     <h2>Sube una imagen y selecciona el tamaño</h2>
-    <input type="file" id="imageUpload" accept="image/*">
+    <input type="file" id="imageUpload" accept="image/*" multiple>
     <label for="width">Ancho:</label>
 <input type="number" id="width" value="1" step="0.1">
 
@@ -75,7 +75,7 @@ button:hover {
        function generatePattern() {
     let canvas = document.getElementById("canvas");
     let ctx = canvas.getContext("2d");
-    let file = document.getElementById("imageUpload").files[0];
+    let files = document.getElementById("imageUpload").files;
     let widthInput = parseFloat(document.getElementById("width").value);
     let heightInput = parseFloat(document.getElementById("height").value);
     let unit = document.getElementById("unit").value;
@@ -93,26 +93,36 @@ button:hover {
     let cols = Math.floor(pageWidth / widthPx);
     let rows = Math.floor(pageHeight / heightPx);
 
-    // **Aumentamos la resolución para evitar pixelado**
-    canvas.width = pageWidth * 2; // Duplicamos la resolución
-    canvas.height = pageHeight * 2;
-    ctx.scale(2, 2); // Ajustamos la escala
-
+    canvas.width = pageWidth;
+    canvas.height = pageHeight;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (file) {
-        let img = new Image();
-        img.src = URL.createObjectURL(file);
-        img.onload = function() {
-            for (let y = 0; y < rows * heightPx; y += heightPx) {
-                for (let x = 0; x < cols * widthPx; x += widthPx) {
-                    ctx.drawImage(img, x, y, widthPx, heightPx);
-                    ctx.strokeStyle = "black"; 
-                    ctx.lineWidth = 1; 
-                    ctx.strokeRect(x, y, widthPx, heightPx);
+    if (files.length > 0) {
+        let imgIndex = 0; // Para alternar imágenes
+        let images = [];
+
+        // Cargar todas las imágenes primero
+        Array.from(files).forEach((file, index) => {
+            let img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = function() {
+                images[index] = img;
+                
+                if (images.length === files.length) {
+                    // Una vez que todas las imágenes están cargadas, dibujarlas en el patrón
+                    for (let y = 0; y < rows * heightPx; y += heightPx) {
+                        for (let x = 0; x < cols * widthPx; x += widthPx) {
+                            ctx.drawImage(images[imgIndex], x, y, widthPx, heightPx);
+                            ctx.strokeStyle = "red"; 
+                            ctx.lineWidth = 1; 
+                            ctx.strokeRect(x, y, widthPx, heightPx);
+
+                            imgIndex = (imgIndex + 1) % images.length; // Alternar imágenes
+                        }
+                    }
                 }
-            }
-        };
+            };
+        });
     }
 }
     function saveAsPDF() {
